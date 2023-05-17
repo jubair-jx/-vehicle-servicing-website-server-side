@@ -1,4 +1,5 @@
 const express = require("express");
+let jwt = require("jsonwebtoken");
 const app = express();
 require("dotenv").config();
 const PORT = process.env.PORT || 5000;
@@ -33,6 +34,15 @@ async function run() {
       const result = await cursor.toArray();
       res.send(result);
     });
+    //jwt
+    app.post("/jwt", (req, res) => {
+      const user = req.body;
+      console.log(user);
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: "1h",
+      });
+      res.send({ token });
+    });
     app.get("/services/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
@@ -52,6 +62,7 @@ async function run() {
     });
 
     app.get("/booking", async (req, res) => {
+      console.log(req.headers.authorization);
       let query = {};
       if (req.query?.email) {
         query = { email: req.query.email };
