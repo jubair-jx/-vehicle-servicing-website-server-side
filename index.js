@@ -23,6 +23,28 @@ const client = new MongoClient(uri, {
   },
 });
 
+//JWT token Function
+const verifyJwtToken = (req, res, next) => {
+  console.log(req.headers.authorization);
+  const authorization = req.headers.authorization;
+  if (!authorization) {
+    return res
+      .status(401)
+      .send({ error: true, message: "UnAuthorized Access" });
+  }
+  const token = authorization.split(" ")[1];
+  console.log("token inside here", token);
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (error, decoded) => {
+    if (error) {
+      return res
+        .status(403)
+        .send({ error: true, message: "UnAuthorized Access" });
+    }
+    req.decoded = decoded;
+    next();
+  });
+};
+
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
@@ -61,8 +83,14 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/booking", async (req, res) => {
-      console.log(req.headers.authorization);
+    app.get("/booking", verifyJwtToken, async (req, res) => {
+      console.log("came back token", verifyJwtToken);
+      const decoded = req.decoded;
+      console.log("come back after decoded", decoded);
+      //   console.log(req.headers.authorization);
+      if (decoded.email !== req.query.email) {
+        return res.status(403).send({ error: 1, message: "forbidden access" });
+      }
       let query = {};
       if (req.query?.email) {
         query = { email: req.query.email };
